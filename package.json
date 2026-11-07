@@ -1,0 +1,17 @@
+{
+  "name": "hidden-peak-dining",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "services/api",
+    "apps/mobile"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev --workspace @hidden-peak/api",
+    "dev:mobile": "npm run start --workspace @hidden-peak/mobile",
+    "build": "npm run build --workspace @hidden-peak/api",
+    "db:generate": "npm run prisma:generate --workspace @hidden-peak/api",
+    "db:migrate": "npm run prisma:migrate --workspace @hidden-peak/api",
+    "db:seed": "npm run prisma:seed --workspace @hidden-peak/api"
+  }
+}

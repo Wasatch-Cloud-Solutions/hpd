@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Hidden Peak Dining",
+    "slug": "hidden-peak-dining",
+    "scheme": "hiddenpeak",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.hiddenpeak.dining"
+    }
+  }
+}
