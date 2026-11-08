@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
@@ -20,6 +20,9 @@ spec:
             - name: http
               protocol: TCP
               containerPort: 80
+          envFrom:
+            - secretRef:
+                name: hpp-secrets
 ---
 apiVersion: v1
 kind: Service

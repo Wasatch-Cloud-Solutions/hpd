@@ -1,13 +1,13 @@
-apiVersion: v1
+apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argocd
+  name: hpp
   namespace: argocd
 spec:
   project: default
-  source:
-    repoURL:
-    targetRevision: HEAD
+  source: 
+    repoURL: https://github.com/Wasatch-Cloud-Solutions/hpd.git
+    targetRevision: main
     path: kube
   destination:
     server: 'https://kubernetes.default.svc'
