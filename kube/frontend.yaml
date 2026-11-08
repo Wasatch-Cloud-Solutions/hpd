@@ -30,6 +30,7 @@ metadata:
   name: frontend
   namespace: prod
 spec:
+  type: LoadBalancer
   selector:
     app: frontend
   ports:
