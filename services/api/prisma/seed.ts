@@ -1,6 +1,12 @@
 import { PrismaClient, Role } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
+import { config } from "dotenv";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 
+const envPaths = [resolve(process.cwd(), ".env"), resolve(process.cwd(), "../../.env")];
+const envPath = envPaths.find((candidate) => existsSync(candidate));
+if (envPath) config({ path: envPath });
 const prisma = new PrismaClient();
 
 async function main(): Promise<void> {

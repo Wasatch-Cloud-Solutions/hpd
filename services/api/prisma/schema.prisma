@@ -61,6 +61,7 @@ model User {
   passwordHash    String          @map("password_hash")
   profileImageUrl String?         @map("profile_image_url")
   role            Role            @default(EMPLOYEE)
+  tokenVersion    Int             @default(0) @map("token_version")
   accountStatus   AccountStatus   @default(ACTIVE) @map("account_status")
   preferences     Json            @default("{}")
   lastActiveAt    DateTime?        @map("last_active_at")

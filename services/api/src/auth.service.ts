@@ -35,7 +35,7 @@ export class AuthService {
         passwordHash: await bcrypt.hash(input.password, 12),
         role: Role.EMPLOYEE,
       },
-      select: { id: true, fullName: true, email: true, role: true },
+      select: { id: true, fullName: true, email: true, role: true, tokenVersion: true },
     });
     return { user, ...(await this.issueTokens(user)) };
   }
@@ -75,11 +75,39 @@ export class AuthService {
     ) {
       throw new UnauthorizedException("Refresh token is invalid or expired");
     }
-    await this.prisma.refreshToken.update({
-      where: { id: stored.id },
+    const revoked = await this.prisma.refreshToken.updateMany({
+      where: { id: stored.id, revokedAt: null, expiresAt: { gt: new Date() } },
       data: { revokedAt: new Date() },
     });
+    if (revoked.count !== 1) throw new UnauthorizedException("Refresh token has already been used");
     return this.issueTokens(stored.user);
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{ success: true }> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+      throw new UnauthorizedException("Current password is incorrect");
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: { passwordHash, tokenVersion: { increment: 1 } },
+      });
+      await tx.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorId: userId,
+          action: "user.password_changed",
+          entityType: "user",
+          entityId: userId,
+        },
+      });
+    });
+    return { success: true };
   }
 
   async logout(token: string): Promise<{ success: true }> {
@@ -90,8 +118,14 @@ export class AuthService {
     return { success: true };
   }
 
-  private async issueTokens(user: { id: string; email: string; role: Role }): Promise<TokenPair> {
-    const payload = { sub: user.id, id: user.id, email: user.email, role: user.role };
+  private async issueTokens(user: { id: string; email: string; role: Role; tokenVersion: number }): Promise<TokenPair> {
+    const payload = {
+      sub: user.id,
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      tokenVersion: user.tokenVersion,
+    };
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.config.getOrThrow<string>("JWT_ACCESS_SECRET"),
       expiresIn: "15m",

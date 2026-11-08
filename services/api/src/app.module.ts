@@ -13,10 +13,15 @@ import { PrismaService } from "./prisma.service";
 import { RealtimeGateway } from "./realtime.gateway";
 import { TeamController } from "./team.controller";
 import { UserController } from "./user.controller";
+import { HealthController } from "./health.controller";
+import { resolve } from "node:path";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [resolve(process.cwd(), ".env"), resolve(process.cwd(), "../../.env")],
+    }),
     JwtModule.register({}),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
   ],
@@ -27,6 +32,7 @@ import { UserController } from "./user.controller";
     InventoryController,
     MessageController,
     NotificationController,
+    HealthController,
   ],
   providers: [
     PrismaService,

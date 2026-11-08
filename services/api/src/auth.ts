@@ -17,6 +17,7 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   role: Role;
+  tokenVersion: number;
 }
 
 export interface AuthenticatedRequest extends Request {
@@ -58,15 +59,19 @@ export class JwtAuthGuard implements CanActivate {
     }
     const currentUser = await this.prisma.user.findUnique({
       where: { id: claims.id },
-      select: { id: true, email: true, role: true, accountStatus: true },
+      select: { id: true, email: true, role: true, accountStatus: true, tokenVersion: true },
     });
     if (!currentUser || currentUser.accountStatus !== AccountStatus.ACTIVE) {
       throw new UnauthorizedException("Account is inactive");
+    }
+    if (claims.tokenVersion !== currentUser.tokenVersion) {
+      throw new UnauthorizedException("Access token has been revoked");
     }
     request.user = {
       id: currentUser.id,
       email: currentUser.email,
       role: currentUser.role,
+      tokenVersion: currentUser.tokenVersion,
     };
     return true;
   }

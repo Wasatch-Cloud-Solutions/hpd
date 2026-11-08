@@ -10,9 +10,8 @@ import {
   BadRequestException,
   UseGuards,
 } from "@nestjs/common";
-import { IsOptional, IsString, MinLength } from "class-validator";
+import { IsEnum, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
 import { MembershipRole, Role } from "@prisma/client";
-import { IsUUID } from "class-validator";
 import { AuthenticatedUser, CurrentUser, JwtAuthGuard } from "./auth";
 import { PrismaService } from "./prisma.service";
 import { notificationAllowed } from "./notification-preferences";
@@ -30,7 +29,7 @@ class MembershipDto {
   @IsUUID("4")
   userId!: string;
 
-  @IsString()
+  @IsEnum(MembershipRole)
   membershipRole: MembershipRole = MembershipRole.MEMBER;
 }
 
@@ -141,15 +140,17 @@ export class TeamController {
         update: { membershipRole: body.membershipRole },
         create: { userId: body.userId, teamId, membershipRole: body.membershipRole },
       });
-      if (notificationAllowed(target.preferences, "teamMembership")) await tx.notification.create({
-        data: {
-          userId: body.userId,
-          teamId,
-          notificationType: "TEAM_MEMBERSHIP",
-          title: "Team assignment updated",
-          body: "You have been added to a team.",
-        },
-      });
+      if (notificationAllowed(target.preferences, "teamMembership")) {
+        await tx.notification.create({
+          data: {
+            userId: body.userId,
+            teamId,
+            notificationType: "TEAM_MEMBERSHIP",
+            title: "Team assignment updated",
+            body: "You have been added to a team.",
+          },
+        });
+      }
       await tx.auditLog.create({
         data: {
           actorId: user.id,

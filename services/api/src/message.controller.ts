@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { IsEnum, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from "class-validator";
 import { MessageType, Role } from "@prisma/client";
 import { AuthenticatedUser, CurrentUser, JwtAuthGuard } from "./auth";
 import { PrismaService } from "./prisma.service";
@@ -27,7 +27,7 @@ class CreateMessageDto {
   messageType?: MessageType;
 
   @IsOptional()
-  @IsString()
+  @IsUUID("4")
   parentMessageId?: string;
 }
 
@@ -157,18 +157,20 @@ export class MessageController {
     if (message.senderId !== user.id && user.role !== Role.MANAGER && user.role !== Role.ADMINISTRATOR) {
       throw new ForbiddenException("You can only edit your own messages");
     }
-    const updated = await this.prisma.message.update({
-      where: { id },
-      data: { content: body.content.trim(), editedAt: new Date() },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.message.update({
+        where: { id },
+        data: { content: body.content.trim(), editedAt: new Date() },
+      });
+      await tx.outboxEvent.create({
+        data: {
+          eventType: "MessageUpdated",
+          aggregateId: id,
+          payload: { teamId: message.teamId, messageId: id, content: updated.content },
+        },
+      });
+      return updated;
     });
-    await this.prisma.outboxEvent.create({
-      data: {
-        eventType: "MessageUpdated",
-        aggregateId: id,
-        payload: { teamId: message.teamId, messageId: id, content: updated.content },
-      },
-    });
-    return updated;
   }
 
   @Post("messages/:id/pin")
@@ -176,18 +178,20 @@ export class MessageController {
     const message = await this.prisma.message.findUniqueOrThrow({ where: { id } });
     await this.requireMember(user, message.teamId);
     if (user.role === Role.EMPLOYEE) throw new ForbiddenException("Manager access required");
-    const updated = await this.prisma.message.update({
-      where: { id },
-      data: { isPinned: !message.isPinned },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.message.update({
+        where: { id },
+        data: { isPinned: !message.isPinned },
+      });
+      await tx.outboxEvent.create({
+        data: {
+          eventType: "MessageUpdated",
+          aggregateId: id,
+          payload: { teamId: message.teamId, messageId: id, isPinned: updated.isPinned },
+        },
+      });
+      return updated;
     });
-    await this.prisma.outboxEvent.create({
-      data: {
-        eventType: "MessageUpdated",
-        aggregateId: id,
-        payload: { teamId: message.teamId, messageId: id, isPinned: updated.isPinned },
-      },
-    });
-    return updated;
   }
 
   @Post("messages/:id/read")
@@ -229,18 +233,22 @@ export class MessageController {
     if (message.senderId !== user.id && user.role === Role.EMPLOYEE) {
       throw new ForbiddenException("You can only delete your own messages");
     }
-    await this.prisma.message.update({ where: { id }, data: { deletedAt: new Date() } });
-    await this.prisma.outboxEvent.create({
-      data: {
-        eventType: "MessageUpdated",
-        aggregateId: id,
-        payload: { teamId: message.teamId, messageId: id, deleted: true },
-      },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.message.update({ where: { id }, data: { deletedAt: new Date() } });
+      await tx.outboxEvent.create({
+        data: {
+          eventType: "MessageUpdated",
+          aggregateId: id,
+          payload: { teamId: message.teamId, messageId: id, deleted: true },
+        },
+      });
     });
     return { success: true };
   }
 
   private async requireMember(user: AuthenticatedUser, teamId: string): Promise<void> {
+    const team = await this.prisma.team.findUnique({ where: { id: teamId }, select: { isActive: true } });
+    if (!team?.isActive) throw new ForbiddenException("Team is not active");
     if (user.role === Role.ADMINISTRATOR) return;
     const membership = await this.prisma.teamMembership.findUnique({
       where: { userId_teamId: { userId: user.id, teamId } },

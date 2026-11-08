@@ -22,7 +22,9 @@ function RealtimeBridge() {
     socket.on("inventory.updated", refreshInventory);
     void api.teams().then((teams) => {
       teams.forEach((team) => socket.emit("team.join", team.id));
-    }).catch(() => undefined);
+    }).catch((error: unknown) => {
+      console.warn("Team rooms could not be joined; live updates will reconnect when data loads.", error);
+    });
     return () => {
       socket.off("notification.created", refreshNotifications);
       socket.off("inventory.updated", refreshInventory);
@@ -50,6 +52,9 @@ export default function RootLayout() {
         <Stack.Screen name="inventory/new" options={{ title: "Add inventory item", presentation: "modal" }} />
         <Stack.Screen name="inventory/[id]" options={{ title: "Inventory item" }} />
         <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
+        <Stack.Screen name="employees" options={{ title: "Employee directory" }} />
+        <Stack.Screen name="teams/manage" options={{ title: "Team management" }} />
+        <Stack.Screen name="admin" options={{ title: "Administrator" }} />
       </Stack>
     </QueryClientProvider>
   );

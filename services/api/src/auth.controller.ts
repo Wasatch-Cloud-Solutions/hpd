@@ -32,6 +32,16 @@ class TokenDto {
   refreshToken!: string;
 }
 
+class ChangePasswordDto {
+  @IsString()
+  @MinLength(1)
+  currentPassword!: string;
+
+  @IsString()
+  @MinLength(10)
+  newPassword!: string;
+}
+
 @Controller("auth")
 export class AuthController {
   constructor(
@@ -57,6 +67,15 @@ export class AuthController {
   @Post("logout")
   logout(@Body() body: TokenDto) {
     return this.auth.logout(body.refreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("change-password")
+  changePassword(
+    @Body() body: ChangePasswordDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.auth.changePassword(user.id, body.currentPassword, body.newPassword);
   }
 
   @UseGuards(JwtAuthGuard)

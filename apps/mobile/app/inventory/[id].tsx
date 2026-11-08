@@ -9,6 +9,8 @@ export default function InventoryItemScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
+  const [adjustment, setAdjustment] = useState("");
+  const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const itemQuery = useQuery({
     queryKey: ["inventory", "item", id],
@@ -21,19 +23,21 @@ export default function InventoryItemScreen() {
   const item = itemQuery.data;
   const teamId = item?.teams[0]?.teamId;
 
-  async function updateQuantity(value: number, exact = false) {
-    if (!item || !teamId) return;
+  async function updateQuantity(value: number, exact = false, note?: string): Promise<boolean> {
+    if (!item || !teamId) return false;
     setError("");
     try {
-      if (exact || item.quantity === null) await api.setQuantity(item.id, teamId, value);
-      else await api.adjustInventory(item.id, teamId, value);
+      if (exact || item.quantity === null) await api.setQuantity(item.id, teamId, value, note);
+      else await api.adjustInventory(item.id, teamId, value, note);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["inventory"] }),
         queryClient.invalidateQueries({ queryKey: ["inventory", "item", id] }),
         queryClient.invalidateQueries({ queryKey: ["inventory", id, "history"] }),
       ]);
+      return true;
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Quantity update failed");
+      return false;
     }
   }
 
@@ -69,16 +73,30 @@ export default function InventoryItemScreen() {
           <TextInput value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="Exact quantity" style={[styles.input, { flex: 1 }]} />
           <Text onPress={() => {
             const value = Number(amount);
-            if (amount.trim() && Number.isFinite(value) && value >= 0) void updateQuantity(value, true);
+            if (amount.trim() && Number.isFinite(value) && value >= 0) void updateQuantity(value, true, notes);
             else setError("Enter a quantity of zero or more.");
           }} style={{ color: colors.olive, fontWeight: "700", padding: 10 }}>Set</Text>
+        </View>
+        <TextInput value={adjustment} onChangeText={setAdjustment} keyboardType="decimal-pad" placeholder="Adjustment amount (use − to remove)" style={styles.input} />
+        <TextInput value={notes} onChangeText={setNotes} placeholder="Optional adjustment note" style={styles.input} />
+        <View style={styles.button}>
+          <Text onPress={() => {
+            const value = Number(adjustment);
+            if (adjustment.trim() && Number.isFinite(value) && value !== 0) {
+              void updateQuantity(value, false, notes).then((success) => {
+                if (success) setAdjustment("");
+              });
+            } else {
+              setError("Enter a non-zero adjustment amount.");
+            }
+          }} style={styles.buttonText}>Apply adjustment</Text>
         </View>
         {!!error && <Text style={styles.error}>{error}</Text>}
         <Text style={styles.cardTitle}>Recent activity</Text>
         {history.data?.map((transaction) => (
           <View key={transaction.id} style={styles.card}>
             <Text style={styles.cardTitle}>{transaction.transactionType.replace("_", " ")}</Text>
-            <Text style={styles.body}>{transaction.previousQuantity ?? "Not Counted"} → {transaction.newQuantity ?? "Not Counted"} {item.unit}</Text>
+            <Text style={styles.body}>{transaction.previousQuantity ?? "Not Counted"} → {transaction.newQuantity ?? "Not Counted"} {item.unit} · {transaction.user.fullName}</Text>
             <Text style={{ color: colors.secondary, fontSize: 11 }}>{new Date(transaction.createdAt).toLocaleString()}</Text>
           </View>
         ))}

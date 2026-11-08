@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { api, clearTokens, restoreTokens, saveTokens } from "./api";
+import { api, clearTokens, hasSession, restoreTokens, saveTokens } from "./api";
 import type { User } from "./types";
 
 interface AuthState {
@@ -25,7 +25,7 @@ export const useAuth = create<AuthState>((set) => ({
       const user = await api.me();
       set({ ready: true, signedIn: true, user });
     } catch {
-      set({ ready: true, signedIn: true });
+      set({ ready: true, signedIn: hasSession() });
     }
   },
   signIn: async (user, access, refresh) => {

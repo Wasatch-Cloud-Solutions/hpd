@@ -33,20 +33,15 @@ export class OutboxService implements OnModuleInit, OnModuleDestroy {
       for (const event of events) {
         const payload = event.payload as { teamId?: string; userIds?: string[] };
         if (payload.teamId) {
-          const eventName =
-            event.eventType === "MessageCreated"
-              ? "message.created"
-              : event.eventType.startsWith("Message")
-                ? "message.updated"
-              : event.eventType === "InventoryItemCreated"
-                ? "inventory.created"
-                : event.eventType === "InventoryItemArchived"
-                  ? "inventory.archived"
-                : event.eventType === "InventoryItemUpdated"
-                  ? "inventory.updated"
-              : event.eventType === "InventoryQuantityAdjusted"
-                ? "inventory.updated"
-                : "event";
+          const eventNames: Record<string, string> = {
+            MessageCreated: "message.created",
+            MessageUpdated: "message.updated",
+            InventoryItemCreated: "inventory.created",
+            InventoryItemUpdated: "inventory.updated",
+            InventoryQuantityAdjusted: "inventory.updated",
+            InventoryItemArchived: "inventory.archived",
+          };
+          const eventName = eventNames[event.eventType] ?? "event";
           this.realtime.emitTeamEvent(payload.teamId, eventName, event.payload);
         }
         for (const userId of payload.userIds ?? []) {
@@ -58,7 +53,8 @@ export class OutboxService implements OnModuleInit, OnModuleDestroy {
         });
       }
     } catch (error) {
-      console.error("Outbox publication failed; pending events will be retried.", error);
+      const errorType = error instanceof Error ? error.name : "UnknownError";
+      console.error(`Outbox publication failed (${errorType}); pending events will be retried.`);
     } finally {
       this.running = false;
     }

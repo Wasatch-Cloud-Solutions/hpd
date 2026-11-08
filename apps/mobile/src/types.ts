@@ -6,13 +6,20 @@ export interface User {
   email: string;
   role: Role;
   profileImageUrl?: string | null;
+  preferences?: Record<string, unknown>;
+  accountStatus?: "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
+  memberships?: { teamId: string; membershipRole: "MEMBER" | "MANAGER"; team: { id: string; name: string } }[];
 }
 
 export interface Team {
   id: string;
   name: string;
   description: string;
-  memberships?: { userId: string; membershipRole: "MEMBER" | "MANAGER" }[];
+  memberships?: {
+    userId: string;
+    membershipRole: "MEMBER" | "MANAGER";
+    user?: { id: string; fullName: string; role: Role };
+  }[];
 }
 
 export interface InventoryItem {

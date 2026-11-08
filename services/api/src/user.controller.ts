@@ -88,18 +88,23 @@ export class UserController {
     if (user.role === Role.EMPLOYEE) {
       throw new ForbiddenException("Employee directory access requires manager privileges");
     }
-    const managedTeamScope =
+    const managedTeamScope: Prisma.UserWhereInput =
       user.role === Role.MANAGER
         ? {
-            memberships: {
-              some: {
-                team: {
-                  memberships: {
-                    some: { userId: user.id, membershipRole: "MANAGER" as const },
+            OR: [
+              { memberships: { none: {} } },
+              {
+                memberships: {
+                  some: {
+                    team: {
+                      memberships: {
+                        some: { userId: user.id, membershipRole: "MANAGER" },
+                      },
+                    },
                   },
                 },
               },
-            },
+            ],
           }
         : {};
     return this.prisma.user.findMany({
@@ -131,7 +136,7 @@ export class UserController {
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.user.update({
         where: { id },
-        data: { accountStatus: body.accountStatus },
+        data: { accountStatus: body.accountStatus, tokenVersion: { increment: 1 } },
         select: { id: true, fullName: true, email: true, accountStatus: true },
       });
       if (body.accountStatus !== AccountStatus.ACTIVE) {
@@ -163,7 +168,7 @@ export class UserController {
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.user.update({
         where: { id },
-        data: { role: body.role },
+        data: { role: body.role, tokenVersion: { increment: 1 } },
         select: { id: true, fullName: true, email: true, role: true },
       });
       await tx.auditLog.create({

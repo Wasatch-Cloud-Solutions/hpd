@@ -17,7 +17,7 @@ import { createClient } from "redis";
 import { AuthenticatedUser } from "./auth";
 import { PrismaService } from "./prisma.service";
 
-@WebSocketGateway({ cors: { origin: true }, namespace: "/" })
+@WebSocketGateway({ cors: { origin: true } })
 export class RealtimeGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy
 {
@@ -33,6 +33,12 @@ export class RealtimeGateway
   ) {}
 
   async afterInit(server: Server): Promise<void> {
+    server.use((socket, next) => {
+      void this.authenticate(socket).then(
+        () => next(),
+        () => next(new Error("Unauthorized")),
+      );
+    });
     const url = this.config.get<string>("REDIS_URL");
     if (!url) return;
     const publisher = createClient({ url });
@@ -48,33 +54,39 @@ export class RealtimeGateway
   }
 
   async handleConnection(socket: Socket): Promise<void> {
-    const token = socket.handshake.auth?.token;
-    if (typeof token !== "string") {
-      socket.disconnect(true);
-      return;
-    }
-    try {
-      const claims = await this.jwt.verifyAsync<AuthenticatedUser>(token, {
-        secret: this.config.getOrThrow<string>("JWT_ACCESS_SECRET"),
+    const user = socket.data.user as AuthenticatedUser | undefined;
+    if (user) {
+      await this.prisma.user.updateMany({
+        where: { id: user.id },
+        data: { lastActiveAt: new Date() },
       });
-      const user = await this.prisma.user.findUnique({
-        where: { id: claims.id },
-        select: { id: true, email: true, role: true, accountStatus: true },
-      });
-      if (!user || user.accountStatus !== AccountStatus.ACTIVE) {
-        socket.disconnect(true);
-        return;
-      }
-      const authenticatedUser: AuthenticatedUser = {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      };
-      socket.data.user = authenticatedUser;
       await socket.join(`user:${user.id}`);
-    } catch {
-      socket.disconnect(true);
     }
+  }
+
+  private async authenticate(socket: Socket): Promise<void> {
+    const token = socket.handshake.auth?.token;
+    if (typeof token !== "string") throw new Error("Missing access token");
+    const claims = await this.jwt.verifyAsync<AuthenticatedUser>(token, {
+      secret: this.config.getOrThrow<string>("JWT_ACCESS_SECRET"),
+    });
+    const user = await this.prisma.user.findUnique({
+      where: { id: claims.id },
+      select: { id: true, email: true, role: true, accountStatus: true, tokenVersion: true },
+    });
+    if (
+      !user ||
+      user.accountStatus !== AccountStatus.ACTIVE ||
+      claims.tokenVersion !== user.tokenVersion
+    ) {
+      throw new Error("Account is inactive or session was revoked");
+    }
+    socket.data.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      tokenVersion: user.tokenVersion,
+    } satisfies AuthenticatedUser;
   }
 
   async joinTeam(socket: Socket, teamId: string): Promise<boolean> {

@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+.git
+**/.git
+.env
+.env.*
+**/.env
+**/.env.*
+dist
+**/dist
+.expo
+coverage
+kube/
+argo/
+tf/
+*.log

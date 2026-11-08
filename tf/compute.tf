@@ -52,11 +52,11 @@ resource "aws_eks_access_policy_association" "admin1" {
 ############
 resource "aws_db_instance" "default" {
   allocated_storage    = 10
-  db_name              = "hpp-db"
+  db_name              = "hppdb"
   engine               = "postgres"
-  engine_version       = "16.3"
+  engine_version       = "18.3"
   instance_class       = "db.t3.micro"
-  username             = "admin"
+  username             = "admin1"
   password             = "admin123"
   skip_final_snapshot  = true
   db_subnet_group_name = aws_db_subnet_group.default.name

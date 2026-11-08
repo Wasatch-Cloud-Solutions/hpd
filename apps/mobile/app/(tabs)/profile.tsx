@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { api } from "../../src/api";
 import { useAuth } from "../../src/store";
 import { styles } from "../../src/theme";
@@ -16,9 +16,12 @@ export default function ProfileScreen() {
   }, [profile.data, user]);
 
   async function logout() {
-    await api.logout();
+    const serverRevoked = await api.logout();
     await signOut();
     router.replace("/(auth)/login");
+    if (!serverRevoked) {
+      Alert.alert("Signed out on this device", "The server could not revoke the session. It will expire automatically.");
+    }
   }
 
   const currentUser = profile.data ?? user;
@@ -33,6 +36,13 @@ export default function ProfileScreen() {
           <Text style={styles.body}>{currentUser.role.replace("_", " ")}</Text>
         </View>
         <Text onPress={() => router.push("/notifications")} style={styles.cardTitle}>Notifications →</Text>
+        {(currentUser.role === "MANAGER" || currentUser.role === "ADMINISTRATOR") && <>
+          <Text onPress={() => router.push("/employees")} style={styles.cardTitle}>Employee directory →</Text>
+          <Text onPress={() => router.push("/teams/manage")} style={styles.cardTitle}>Team management →</Text>
+        </>}
+        {currentUser.role === "ADMINISTRATOR" && (
+          <Text onPress={() => router.push("/admin")} style={styles.cardTitle}>Administrator tools →</Text>
+        )}
       </>}
       <View style={styles.button}><Text onPress={() => void logout()} style={styles.buttonText}>Sign out</Text></View>
     </View>

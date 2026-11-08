@@ -8,6 +8,11 @@ import { colors, styles } from "../../src/theme";
 export default function HomeScreen() {
   const user = useAuth((state) => state.user);
   const teams = useQuery({ queryKey: ["teams"], queryFn: api.teams });
+  const employees = useQuery({
+    queryKey: ["employees"],
+    queryFn: () => api.employees(),
+    enabled: user?.role === "MANAGER" || user?.role === "ADMINISTRATOR",
+  });
   const inventory = useQuery({ queryKey: ["inventory"], queryFn: () => api.inventory() });
   const notifications = useQuery({ queryKey: ["notifications"], queryFn: api.notifications });
   const lowStock = inventory.data?.filter((item) =>
@@ -39,6 +44,13 @@ export default function HomeScreen() {
           <Text style={styles.body}>{team.description || "Team updates and operations"}</Text>
         </Link>
       ))}
+      {(user?.role === "MANAGER" || user?.role === "ADMINISTRATOR") && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Operations overview</Text>
+          <Text style={styles.body}>{employees.data?.length ?? 0} employees · {teams.data?.length ?? 0} teams</Text>
+          <Text style={styles.body}>{lowStock.length} low-stock alerts to review</Text>
+        </View>
+      )}
       <View style={styles.row}>
         <Text style={[styles.cardTitle, { flex: 1 }]}>Inventory alerts</Text>
         <Link href="/(tabs)/inventory" style={{ color: colors.olive }}>Open inventory</Link>
