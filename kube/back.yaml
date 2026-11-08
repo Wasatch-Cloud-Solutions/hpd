@@ -27,6 +27,7 @@ metadata:
   name: backend
   namespace: prod
 spec:
+  type: ClusterIP
   selector:
     app: backend
   ports:
