@@ -11,6 +11,7 @@ RUN npm ci --workspace @hidden-peak/mobile --include-workspace-root=false
 COPY apps/mobile ./apps/mobile
 
 
+ENV EXPO_PUBLIC_API_URL=test
 
 WORKDIR /app/apps/mobile
 RUN npm run build:web

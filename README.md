@@ -37,6 +37,8 @@ docker build -f services/api/Dockerfile -t hidden-peak-api:local .
 
 Run it with the API's required secrets and database settings supplied through the environment (or an environment file that is not committed). `DATABASE_URL` and `REDIS_URL` must point to services reachable from the container; `localhost` inside the API container refers to the API container itself. The image does not include or start PostgreSQL or Redis; local development can continue using the official images in `docker-compose.yml`. Database migrations should be run as a deployment step, not automatically when the API container starts. The build context excludes environment files and `kube/`, including Kubernetes secrets.
 
+For provisioning PostgreSQL on AWS RDS, configuring connectivity and secrets, and applying the Prisma migrations, see [services/api/prisma/README.md](./services/api/prisma/README.md).
+
 ## Build the frontend containers
 
 The Expo client has a production web image and a separate development-server image. Build from the repository root so npm can resolve the workspace lockfile. The web API URL is embedded in the exported client at build time:

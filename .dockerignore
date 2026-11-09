@@ -6,8 +6,7 @@ node_modules
 .env.*
 **/.env
 **/.env.*
-dist
-**/dist
+
 .expo
 coverage
 kube/

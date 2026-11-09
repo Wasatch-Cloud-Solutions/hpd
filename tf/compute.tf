@@ -63,6 +63,12 @@ resource "aws_db_instance" "default" {
   vpc_security_group_ids = [module.vpc.db_sg]
   publicly_accessible = true
 
+  tags = {
+    Name = "hppdb"
+    environment = "prod"
+    role = "database"
+  }
+
 }
 output "db-endpoint" {
   value = aws_db_instance.default.endpoint
