@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, router } from "expo-router";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { api } from "../../src/api";
 import { useAuth } from "../../src/store";
 import { colors, styles } from "../../src/theme";
@@ -13,6 +13,7 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
 
   async function submit() {
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
@@ -27,21 +28,71 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={[styles.screen, { justifyContent: "center", padding: 24 }]}>
-      <View style={{ gap: 18 }}>
-        <View style={{ gap: 6, marginBottom: 12 }}>
-          <Text style={{ color: colors.olive, fontWeight: "700", fontSize: 13, letterSpacing: 1.4 }}>HIDDEN PEAK DINING</Text>
-          <Text style={styles.title}>Welcome back</Text>
-          <Text style={styles.subtitle}>Sign in to your restaurant workspace.</Text>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.screen}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }}>
+        <View style={{ width: "100%", maxWidth: 460, alignSelf: "center", gap: 24 }}>
+          <View style={{ alignItems: "center", gap: 12 }}>
+            <View style={{ width: 58, height: 58, borderRadius: 20, backgroundColor: colors.darkOlive, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ color: colors.white, fontSize: 26, fontWeight: "700" }}>H</Text>
+            </View>
+            <Text style={{ color: colors.olive, fontSize: 12, fontWeight: "700", letterSpacing: 1.8 }}>HIDDEN PEAK DINING</Text>
+          </View>
+
+          <View style={{ gap: 7, alignItems: "center" }}>
+            <Text style={[styles.title, { textAlign: "center" }]}>Welcome back</Text>
+            <Text style={[styles.subtitle, { textAlign: "center" }]}>Sign in to pick up where your team left off.</Text>
+          </View>
+
+          <View style={[styles.card, { padding: 22, gap: 16, shadowColor: colors.darkOlive, shadowOpacity: 0.06, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 2 }]}>
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: colors.text, fontSize: 13, fontWeight: "700" }}>Email address</Text>
+              <TextInput
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                placeholder="you@restaurant.com"
+                placeholderTextColor="#9AA094"
+                returnKeyType="next"
+                value={email}
+                onChangeText={setEmail}
+                style={styles.input}
+              />
+            </View>
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: colors.text, fontSize: 13, fontWeight: "700" }}>Password</Text>
+              <TextInput
+                autoComplete="current-password"
+                secureTextEntry
+                placeholder="Enter your password"
+                placeholderTextColor="#9AA094"
+                returnKeyType="go"
+                value={password}
+                onChangeText={setPassword}
+                onSubmitEditing={() => void submit()}
+                style={styles.input}
+              />
+            </View>
+            {!!error && (
+              <View accessibilityRole="alert" style={{ padding: 12, borderRadius: 12, backgroundColor: "#F8E8E4" }}>
+                <Text style={styles.error}>{error}</Text>
+              </View>
+            )}
+            <Pressable
+              accessibilityRole="button"
+              disabled={busy}
+              onPress={() => void submit()}
+              style={[styles.button, { marginTop: 2, opacity: busy ? 0.75 : 1 }]}
+            >
+              {busy ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Sign in</Text>}
+            </Pressable>
+          </View>
+
+          <Text style={[styles.subtitle, { textAlign: "center" }]}>
+            New to Hidden Peak?{" "}
+            <Link href="/(auth)/register" style={{ color: colors.olive, fontWeight: "700" }}>Create an account</Link>
+          </Text>
         </View>
-        <TextInput autoCapitalize="none" keyboardType="email-address" placeholder="Email address" value={email} onChangeText={setEmail} style={styles.input} />
-        <TextInput secureTextEntry placeholder="Password" value={password} onChangeText={setPassword} style={styles.input} />
-        {!!error && <Text style={styles.error}>{error}</Text>}
-        <View style={styles.button}>
-          {busy ? <ActivityIndicator color={colors.white} /> : <Text onPress={() => void submit()} style={styles.buttonText}>Sign in</Text>}
-        </View>
-        <Text style={[styles.subtitle, { textAlign: "center" }]}>New to Hidden Peak? <Link href="/(auth)/register" style={{ color: colors.olive, fontWeight: "700" }}>Create account</Link></Text>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
