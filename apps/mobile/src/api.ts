@@ -4,7 +4,14 @@ import { Platform } from "react-native";
 import { io, Socket } from "socket.io-client";
 import type { InventoryItem, Message, Notification, Team, User } from "./types";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000/api";
+const getFallbackApiUrl = () => {
+  if (Platform.OS === "web" && typeof globalThis !== "undefined" && globalThis.location) {
+    return `${globalThis.location.origin}/api`;
+  }
+  return "http://backend:3000/api";
+};
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? getFallbackApiUrl();
 const ACCESS_KEY = "hidden-peak-access-token";
 const REFRESH_KEY = "hidden-peak-refresh-token";
 const tokenStorage = Platform.OS === "web"
