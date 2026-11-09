@@ -15,22 +15,11 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: techwmarcus/hpp-frontend:v0.6
+          image: techwmarcus/hpp-frontend:v0.7
           ports:
             - name: http
               protocol: TCP
               containerPort: 80
-          envFrom:
-            - secretRef:
-                name: hpp-secrets
-          command: ["/bin/sh", "-c"]
-          args:
-          - |
-            echo "Replacing 'test' placeholder with live envFrom value..."
-            sed -i "s|test|${EXPO_PUBLIC_API_URL}|g" /usr/share/nginx/html/_expo/static/js/*.js
-            
-            echo "Starting web server..."
-            nginx -g "daemon off;"
 ---
 apiVersion: v1
 kind: Service
