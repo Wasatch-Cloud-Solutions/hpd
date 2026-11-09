@@ -15,7 +15,7 @@ spec:
     spec:
       initContainers:
         - name: prisma-migrate
-          image: techwmarcus/hpp-api:v0.5
+          image: techwmarcus/hpp-api:v0.9
           workingDir: /app
           command:
             - npx

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: techwmarcus/hpp-frontend:v0.4
+          image: techwmarcus/hpp-frontend:v0.5
           ports:
             - name: http
               protocol: TCP

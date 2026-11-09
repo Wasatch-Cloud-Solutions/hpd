@@ -8,7 +8,7 @@ const getFallbackApiUrl = () => {
   if (Platform.OS === "web" && typeof globalThis !== "undefined" && globalThis.location) {
     return `${globalThis.location.origin}/api`;
   }
-  return "http://backend:3000/api";
+  return "http://localhost:3000/api";
 };
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? getFallbackApiUrl();
@@ -67,7 +67,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const headers = new Headers(options.headers);
     headers.set("Content-Type", "application/json");
     if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
-    return fetch(`${API_URL}${path}`, { ...options, headers });
+    const cleanUrl = `${API_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+    return fetch(cleanUrl, { ...options, headers });
   };
   let response = await send();
   if (response.status === 401 && refreshToken && !path.startsWith("/auth/")) {
