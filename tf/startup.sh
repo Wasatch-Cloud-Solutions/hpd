@@ -9,6 +9,6 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 helm install argocd argo/argo-cd --namespace argocd --create-namespace
 helm install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
-kubectl apply -f argo/argocd.yaml
+kubectl apply -f ../argo/argocd.yaml
 kubectl get secrets -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
 kubectl get secrets -n monitoring prometheus-kube-prometheus-prometheus -o jsonpath="{.data.prometheus\.yml}" | base64 -d; echo
