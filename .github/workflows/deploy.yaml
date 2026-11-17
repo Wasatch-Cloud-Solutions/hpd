@@ -55,4 +55,4 @@ jobs:
         run: |
           chmod +x startup.sh
           ./startup.sh
-        working-directory: ./
+        working-directory: ./tf
