@@ -10,3 +10,4 @@ coverage/
 .terraform*
 .terraform.*
 .terraform.lock.hcl
+./tf/.terraform.lock.hcl

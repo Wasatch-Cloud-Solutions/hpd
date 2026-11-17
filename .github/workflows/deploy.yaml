@@ -49,7 +49,7 @@ jobs:
       - name: Kube config update
         run: |
           mkdir -p $HOME/.kube
-          aws eks update-kubeconfig --name secops-cluster --region us-west-1
+          aws eks update-kubeconfig --name hidden-peak --region us-west-1
 
       - name: Install ArgoCD CLI
         run: |
