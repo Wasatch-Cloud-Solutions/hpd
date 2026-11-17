@@ -15,7 +15,7 @@ spec:
     spec:
       initContainers:
         - name: prisma-migrate
-          image: techwmarcus/hpp-api:v0.9
+          image: techwmarcus/hpp-api:v1
           workingDir: /app
           command:
             - npx
@@ -27,13 +27,24 @@ spec:
           envFrom:
             - secretRef:
                 name: hpp-secrets
-
+        - name: prisma-seed
+          image: techwmarcus/hpp-api:v1
+          workingDir: /app/services/api
+          command:
+            - node
+            - dist-seed/seed.js
+          envFrom:
+            - secretRef:
+                name: hpp-secrets
 
       containers:
         - name: backend
-          image: techwmarcus/hpp-api:v0.9
+          image: techwmarcus/hpp-api:v1
           ports:
-            - containerPort: 3000     
+            - name: metrics 
+              containerPort: 9090
+            - name: http
+              containerPort: 3000     
           envFrom:
             - secretRef:
                 name: hpp-secrets
@@ -45,11 +56,31 @@ kind: Service
 metadata:
   name: backend
   namespace: prod
+  labels:
+    app: backend
 spec:
   type: ClusterIP
   selector:
     app: backend
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 3000
-      targetPort: 3000
+      targetPort: http
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend-monitor
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  endpoints:
+    - port: metrics          # <-- Must match spec.ports[].name in the Service
+      path: /metrics
+      interval: 15s

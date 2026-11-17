@@ -13,7 +13,7 @@ resource "kubernetes_secret" "app" {
 
   data = {
     DATABASE_URL = "postgresql://admin1:admin123@${data.aws_db_instance.ou.endpoint}/hhpdb?schema=public&sslmode=require"
-    SEED_ADMIN_EMAIL = "amarricaden42@gmail.com"
+    SEED_ADMIN_EMAIL = "adminuser@gmail.com"
     SEED_ADMIN_PASSWORD = "amarri2004"
     EXPO_PUBLIC_API_URL = "http://backend:3000/api"
     JWT_ACCESS_SECRET  = "IJotO0rzhj5m64Ybyb/g4/O9sbhyuphiNjGeGDDqZp8="

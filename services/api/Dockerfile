@@ -38,6 +38,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 
 COPY --from=builder /app/services/api/dist ./services/api/dist
+COPY --from=builder /app/services/api/dist-seed ./services/api/dist-seed
 
 
 WORKDIR /app/services/api
@@ -51,6 +52,5 @@ USER node
 
 
 CMD ["node", "dist/src/main.js"]
-
 
 

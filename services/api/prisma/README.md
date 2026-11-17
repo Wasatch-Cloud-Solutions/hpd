@@ -113,13 +113,13 @@ The current migration history includes the initial schema and a later `token_ver
 
 ## 5. Optional seed data
 
-After migrations succeed, the optional seed command creates the starter teams. It creates an administrator only when `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` are provided:
+After migrations succeed, the seed command creates the starter teams. The Kubernetes backend deployment runs the compiled seed after migrations. It creates an administrator only when both `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` are present in the `hpp-secrets` Secret:
 
 ```powershell
 npm run db:seed
 ```
 
-Use a unique, strong administrator password supplied through a secret, and do not put production seed credentials in source control. The seed uses upserts for the initial teams and administrator, so it can be re-run, but decide whether creating an initial administrator is appropriate for the production environment.
+Use a unique, strong administrator password supplied through a secret, and do not put production seed credentials in source control. The seed only creates the administrator when the configured email is not already in the database; it does not reset an existing administrator's password. For an existing account, use the account's password-change flow or an explicitly approved password reset rather than expecting the seed to overwrite it. Rebuild and deploy the backend image for the Kubernetes seed step to be available.
 
 ## Troubleshooting
 
